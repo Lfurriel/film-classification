@@ -14,6 +14,8 @@ pd.set_option('display.max_columns', None)
 
 # Carregar o dataset
 df = pd.read_csv('files/dataset_preprocessado.csv', encoding='UTF-8')
+columns_to_drop = ['vote_average']
+df = df.drop(columns=columns_to_drop)
 
 # Verificar as primeiras linhas do dataset
 print("\nPrimeiras linhas do dataset:")
