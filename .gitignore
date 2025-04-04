@@ -1,0 +1,4 @@
+venv/
+.idea/
+files/dataset.csv
+files/dataset_preprocessado.csv
