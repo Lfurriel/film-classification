@@ -5,6 +5,7 @@ import numpy as np
 def main():
     # Carregar o dataset
     df = pd.read_csv('files/dataset.csv')
+    print("Tamanho total do dataset:", len(df))
 
     # 1. Remover filmes com vote_count = 0
     df = df[df['vote_count'] > 0]
@@ -20,7 +21,7 @@ def main():
     df[colunas_numericas] = df[colunas_numericas].fillna(df[colunas_numericas].mean())
 
     # 4. Criar coluna target (Bom = 1, Ruim = 0)
-    df['bom_ruim'] = df['vote_average'].apply(lambda x: 1 if x >= 6.0 else 0)
+    df['bom_ruim'] = df['vote_average'].apply(lambda x: 1 if x >= 6.3 else 0)
 
     # 5. Processar gêneros em variáveis dummy
     genres_split = df['genres'].str.split(', ')
@@ -55,7 +56,10 @@ def main():
     df['profit'] = df['revenue'] - df['budget']
 
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    df = df.dropna()
+
+    print("\nDistribuição de classes:")
+    print(df['bom_ruim'].value_counts(normalize=True))
+    print("Após limpeza final:", len(df))
 
     df.to_csv('files/dataset_preprocessado.csv', index=False)
     print("Dataset pré-processado salvo!")

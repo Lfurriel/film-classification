@@ -106,9 +106,7 @@ def train_and_evaluate(X, y, selector, feature_names):
     """Treina e avalia o modelo KNN"""
     print("\n=== Modelagem KNN ===")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Otimização de hiperparâmetros
     param_grid = {
@@ -125,6 +123,9 @@ def train_and_evaluate(X, y, selector, feature_names):
         n_jobs=-1
     )
     grid.fit(X_train, y_train)
+
+    cv_scores = cross_val_score(grid.best_estimator_, X_train, y_train, cv=10)
+    print(f"\nAcurácia média (CV): {cv_scores.mean():.2f} (±{cv_scores.std():.2f})")
 
     print(f"\nMelhores parâmetros: {grid.best_params_}")
     print(f"Melhor acurácia (validação): {grid.best_score_:.2f}")
@@ -146,10 +147,6 @@ def train_and_evaluate(X, y, selector, feature_names):
     )
     plt.title('Matriz de Confusão')
     plt.show()
-
-    # Validação cruzada
-    cv_scores = cross_val_score(best_model, X, y, cv=10)
-    print(f"\nAcurácia média (CV): {cv_scores.mean():.2f} (±{cv_scores.std():.2f})")
 
     # Importância das features (se disponível)
     if selector and hasattr(selector, 'scores_'):
