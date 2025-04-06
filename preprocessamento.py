@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+
 
 def main():
     # Carregar o dataset
@@ -45,6 +47,15 @@ def main():
     df['prod_country_2'] = countries_split[1]
     df['prod_country_3'] = countries_split[2]
     df = df.drop(columns=['production_countries'])
+
+    # 9. Adicionando Return Of Ivestiment
+    df['ROI'] = df['revenue'] / (df['budget'] + 1)  # +1 para evitar divisão por zero
+
+    # 10. Adicionando receita
+    df['profit'] = df['revenue'] - df['budget']
+
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df = df.dropna()
 
     df.to_csv('files/dataset_preprocessado.csv', index=False)
     print("Dataset pré-processado salvo!")
