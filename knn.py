@@ -50,9 +50,6 @@ def exploratory_analysis(df):
     """Realiza análise exploratória dos dados"""
     print("\n=== Análise Exploratória ===")
 
-    print("\nDistribuição de classes:")
-    print(df['bom_ruim'].value_counts(normalize=True))
-
     # Correlação apenas com colunas numéricas
     numeric_df = df.select_dtypes(include=['number'])
     if 'bom_ruim' in numeric_df.columns:
@@ -173,7 +170,7 @@ def main():
     joblib.dump(scaler, 'models/knn/scaler.pkl')
     if selector:
         joblib.dump(selector, 'models/knn/selector.pkl')
-    print("\nModelo e pré-processadores salvos na pasta 'models'")
+    print("\nModelo e pré-processadores salvos na pasta 'models/knn'")
 
 
 if __name__ == "__main__":
