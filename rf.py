@@ -23,7 +23,7 @@ def train_and_evaluate(X, y):
     grid = GridSearchCV(
         RandomForestClassifier(random_state=RANDOM_STATE),
         param_grid,
-        cv=3,
+        cv=5,
         n_jobs=-1,
         scoring='accuracy'
     )
