@@ -3,169 +3,112 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectKBest, f_classif
-from imblearn.over_sampling import SMOTE
-from scipy import stats
 import joblib
 import os
-import warnings
 
-# Configurações iniciais
-warnings.filterwarnings('ignore')
-pd.set_option('display.max_columns', None)
-plt.style.use('ggplot')
-np.random.seed(42)
+# Configurações globais
+RANDOM_STATE = 42
+TEST_SIZE = 0.2
+OUTPUT_PATH = 'output/knn/'
+MODEL_PATH = 'weights/knn/'
 
 
-def load_data():
+def load_data(file_path='files/dataset_preprocessado.csv'):
     """Carrega e prepara os dados"""
-    try:
-        df = pd.read_csv('files/dataset_preprocessado.csv', encoding='UTF-8')
+    df = pd.read_csv(file_path)
 
-        # Colunas a remover
-        cols_to_drop = ['vote_average', 'original_title', 'release_date']
-        df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
+    cols_to_drop = ['release_date', 'original_title', 'vote_average',  # vote_average para não dar data leakage
+                    'prod_company_1', 'prod_company_2', 'prod_company_3',
+                    'prod_country_1', 'prod_country_2', 'prod_country_3', ]
+    df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
 
-        # Converter booleanos para numéricos
-        bool_cols = df.select_dtypes(include=['bool']).columns
-        df[bool_cols] = df[bool_cols].astype(int)
+    # Converter booleanos
+    bool_cols = df.select_dtypes(include=['bool']).columns
+    df[bool_cols] = df[bool_cols].astype(int)
 
-        # Codificar colunas categóricas
-        for col in df.select_dtypes(include=['object']).columns:
-            if len(df[col].unique()) <= 20:
-                df[col] = LabelEncoder().fit_transform(df[col].astype(str))
-            else:
-                df = df.drop(columns=[col])
-
-        return df
-    except Exception as e:
-        print(f"Erro ao carregar dados: {e}")
-        exit()
-
-
-def exploratory_analysis(df):
-    """Realiza análise exploratória dos dados"""
-    print("\n=== Análise Exploratória ===")
-
-    # Correlação apenas com colunas numéricas
-    numeric_df = df.select_dtypes(include=['number'])
-    if 'bom_ruim' in numeric_df.columns:
-        plt.figure(figsize=(12, 6))
-        corr = numeric_df.corr()['bom_ruim'].sort_values()
-        corr.drop('bom_ruim', errors='ignore').plot.barh()
-        plt.title('Correlação com a variável target')
-        plt.tight_layout()
-        plt.show()
-
-
-def feature_engineering(df):
-    """Realiza engenharia de features"""
-    print("\n=== Engenharia de Features ===")
-
-    if all(col in df.columns for col in ['revenue', 'budget']):
-        df['ROI'] = np.where(df['budget'] > 0, df['revenue'] / df['budget'], np.nan)
-        df['profit'] = df['revenue'] - df['budget']
-
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    return df.dropna()
+    return df
 
 
 def preprocess_data(df):
-    """Pré-processa os dados"""
-    print("\n=== Pré-processamento ===")
-
+    """Pré-processamento padrão"""
     X = df.drop(columns=['bom_ruim'])
     y = df['bom_ruim']
 
     # Normalização
-    numeric_cols = X.select_dtypes(include=['number']).columns
     scaler = StandardScaler()
-    X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
+    X_scaled = scaler.fit_transform(X.select_dtypes(include=['number']))
 
     # Seleção de features
-    selector = SelectKBest(f_classif, k=min(15, len(numeric_cols)))
-    X_selected = selector.fit_transform(X[numeric_cols], y)
-    selected_features = numeric_cols[selector.get_support()]
+    selector = SelectKBest(f_classif, k=15)
+    X_selected = selector.fit_transform(X_scaled, y)
 
-    return X_selected, y, scaler, selector, selected_features
+    return X_selected, y, scaler, selector
 
 
-def train_and_evaluate(X, y, selector, feature_names):
-    """Treina e avalia o modelo KNN"""
-    print("\n=== Modelagem KNN ===")
+def train_and_evaluate(X, y):
+    """Treina e avalia o modelo com GridSearch"""
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+    )
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Otimização de hiperparâmetros
+    # Grid de parâmetros
     param_grid = {
         'n_neighbors': np.arange(3, 30, 2),
-        'weights': ['uniform', 'distance'],
-        'metric': ['euclidean', 'manhattan']
+        'weights': ['uniform'],
+        'metric': ['euclidean']
     }
 
     grid = GridSearchCV(
         KNeighborsClassifier(),
         param_grid,
         cv=5,
-        scoring='accuracy',
-        n_jobs=-1
+        n_jobs=-1,
+        scoring='accuracy'
     )
     grid.fit(X_train, y_train)
 
-    cv_scores = cross_val_score(grid.best_estimator_, X_train, y_train, cv=10)
-    print(f"\nAcurácia média (CV): {cv_scores.mean():.2f} (±{cv_scores.std():.2f})")
-
-    print(f"\nMelhores parâmetros: {grid.best_params_}")
-    print(f"Melhor acurácia (validação): {grid.best_score_:.2f}")
-
-    # Avaliação final
+    # Melhor modelo
     best_model = grid.best_estimator_
     y_pred = best_model.predict(X_test)
 
-    print("\nRelatório de Classificação:")
-    print(classification_report(y_test, y_pred))
-
-    # Matriz de confusão
-    plt.figure(figsize=(6, 6))
-    sns.heatmap(
-        confusion_matrix(y_test, y_pred),
-        annot=True, fmt='d', cmap='Blues',
-        xticklabels=['Ruim', 'Bom'],
-        yticklabels=['Ruim', 'Bom']
-    )
-    plt.title('Matriz de Confusão')
-    plt.show()
-
-    # Importância das features (se disponível)
-    if selector and hasattr(selector, 'scores_'):
-        plt.figure(figsize=(10, 6))
-        scores_selected = selector.scores_[selector.get_support()]  # Filtra apenas as selecionadas
-        pd.Series(scores_selected, index=feature_names).sort_values().plot.barh()
-        plt.title('Importância das Features (Selecionadas)')
-        plt.show()
+    # Salvar métricas
+    save_metrics(y_test, y_pred, grid)
+    save_artifacts(best_model)
 
     return best_model
 
 
-def main():
-    """Fluxo principal de execução"""
-    df = load_data()
-    exploratory_analysis(df)
-    df = feature_engineering(df)
-    X, y, scaler, selector, feature_names = preprocess_data(df)
-    model = train_and_evaluate(X, y, selector, feature_names)
+def save_metrics(y_test, y_pred, grid):
+    """Salva métricas e gráficos"""
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
 
-    # Salvar artefatos
-    os.makedirs('models', exist_ok=True)
-    joblib.dump(model, 'models/knn/knn_model.pkl')
-    joblib.dump(scaler, 'models/knn/scaler.pkl')
-    if selector:
-        joblib.dump(selector, 'models/knn/selector.pkl')
-    print("\nModelo e pré-processadores salvos na pasta 'models/knn'")
+    # Matriz de confusão
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(confusion_matrix(y_test, y_pred),
+                annot=True, fmt='d', cmap='Blues')
+    plt.title('Matriz de Confusão - KNN')
+    plt.savefig(f'{OUTPUT_PATH}confusion_matrix.png')
+    plt.close()
+
+    # Relatório de classificação
+    with open(f'{OUTPUT_PATH}classification_report.txt', 'w') as f:
+        f.write(classification_report(y_test, y_pred))
+        f.write(f"\nMelhores parâmetros: {grid.best_params_}")
+
+
+def save_artifacts(model):
+    """Salva modelo e pré-processadores"""
+    os.makedirs(MODEL_PATH, exist_ok=True)
+    joblib.dump(model, f'{MODEL_PATH}knn_model.pkl')
 
 
 if __name__ == "__main__":
-    main()
+    df = load_data()
+    print("Tamanho total do dataset:", len(df))
+    X, y, scaler, selector = preprocess_data(df)
+    model = train_and_evaluate(X, y)
+    print("Processo concluído. Artefatos salvos nas pastas output/ e models/")
