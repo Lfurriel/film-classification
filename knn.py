@@ -1,99 +1,15 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.neighbors import KNeighborsClassifier
+
+from utils import *
+import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.feature_selection import SelectKBest, f_classif
-from imblearn.over_sampling import SMOTE
-from scipy import stats
-import joblib
-import os
-import warnings
 
-# Configurações iniciais
-warnings.filterwarnings('ignore')
-pd.set_option('display.max_columns', None)
-plt.style.use('ggplot')
-np.random.seed(42)
+RANDOM_STATE = 42
+TEST_SIZE = 0.2
+OUTPUT_PATH = 'output/knn/'
+WEIGHT_PATH = 'weights/knn/'
 
-
-def load_data():
-    """Carrega e prepara os dados"""
-    try:
-        df = pd.read_csv('files/dataset_preprocessado.csv', encoding='UTF-8')
-
-        # Colunas a remover
-        cols_to_drop = ['vote_average', 'original_title', 'release_date']
-        df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
-
-        # Converter booleanos para numéricos
-        bool_cols = df.select_dtypes(include=['bool']).columns
-        df[bool_cols] = df[bool_cols].astype(int)
-
-        # Codificar colunas categóricas
-        for col in df.select_dtypes(include=['object']).columns:
-            if len(df[col].unique()) <= 20:
-                df[col] = LabelEncoder().fit_transform(df[col].astype(str))
-            else:
-                df = df.drop(columns=[col])
-
-        return df
-    except Exception as e:
-        print(f"Erro ao carregar dados: {e}")
-        exit()
-
-
-def exploratory_analysis(df):
-    """Realiza análise exploratória dos dados"""
-    print("\n=== Análise Exploratória ===")
-
-    # Correlação apenas com colunas numéricas
-    numeric_df = df.select_dtypes(include=['number'])
-    if 'bom_ruim' in numeric_df.columns:
-        plt.figure(figsize=(12, 6))
-        corr = numeric_df.corr()['bom_ruim'].sort_values()
-        corr.drop('bom_ruim', errors='ignore').plot.barh()
-        plt.title('Correlação com a variável target')
-        plt.tight_layout()
-        plt.show()
-
-
-def feature_engineering(df):
-    """Realiza engenharia de features"""
-    print("\n=== Engenharia de Features ===")
-
-    if all(col in df.columns for col in ['revenue', 'budget']):
-        df['ROI'] = np.where(df['budget'] > 0, df['revenue'] / df['budget'], np.nan)
-        df['profit'] = df['revenue'] - df['budget']
-
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    return df.dropna()
-
-
-def preprocess_data(df):
-    """Pré-processa os dados"""
-    print("\n=== Pré-processamento ===")
-
-    X = df.drop(columns=['bom_ruim'])
-    y = df['bom_ruim']
-
-    # Normalização
-    numeric_cols = X.select_dtypes(include=['number']).columns
-    scaler = StandardScaler()
-    X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
-
-    # Seleção de features
-    selector = SelectKBest(f_classif, k=min(15, len(numeric_cols)))
-    X_selected = selector.fit_transform(X[numeric_cols], y)
-    selected_features = numeric_cols[selector.get_support()]
-
-    return X_selected, y, scaler, selector, selected_features
-
-
-def train_and_evaluate(X, y, selector, feature_names):
+def train_and_evaluate(X, y):
     """Treina e avalia o modelo KNN"""
     print("\n=== Modelagem KNN ===")
 
@@ -101,9 +17,9 @@ def train_and_evaluate(X, y, selector, feature_names):
 
     # Otimização de hiperparâmetros
     param_grid = {
-        'n_neighbors': np.arange(3, 30, 2),
-        'weights': ['uniform', 'distance'],
-        'metric': ['euclidean', 'manhattan']
+        'n_neighbors': np.arange(3, 39, 2),
+        'weights': ['uniform'], # ['uniform', 'distance']
+        'metric': ['euclidean'] # ['euclidean', 'manhattan']
     }
 
     grid = GridSearchCV(
@@ -125,47 +41,12 @@ def train_and_evaluate(X, y, selector, feature_names):
     best_model = grid.best_estimator_
     y_pred = best_model.predict(X_test)
 
-    print("\nRelatório de Classificação:")
-    print(classification_report(y_test, y_pred))
-
-    # Matriz de confusão
-    plt.figure(figsize=(6, 6))
-    sns.heatmap(
-        confusion_matrix(y_test, y_pred),
-        annot=True, fmt='d', cmap='Blues',
-        xticklabels=['Ruim', 'Bom'],
-        yticklabels=['Ruim', 'Bom']
-    )
-    plt.title('Matriz de Confusão')
-    plt.show()
-
-    # Importância das features (se disponível)
-    if selector and hasattr(selector, 'scores_'):
-        plt.figure(figsize=(10, 6))
-        scores_selected = selector.scores_[selector.get_support()]  # Filtra apenas as selecionadas
-        pd.Series(scores_selected, index=feature_names).sort_values().plot.barh()
-        plt.title('Importância das Features (Selecionadas)')
-        plt.show()
+    save_metrics(y_test, y_pred, grid, output_path=OUTPUT_PATH)
+    save_artifacts(best_model, WEIGHT_PATH)
 
     return best_model
 
-
-def main():
-    """Fluxo principal de execução"""
-    df = load_data()
-    exploratory_analysis(df)
-    df = feature_engineering(df)
-    X, y, scaler, selector, feature_names = preprocess_data(df)
-    model = train_and_evaluate(X, y, selector, feature_names)
-
-    # Salvar artefatos
-    os.makedirs('models', exist_ok=True)
-    joblib.dump(model, 'models/knn/knn_model.pkl')
-    joblib.dump(scaler, 'models/knn/scaler.pkl')
-    if selector:
-        joblib.dump(selector, 'models/knn/selector.pkl')
-    print("\nModelo e pré-processadores salvos na pasta 'models/knn'")
-
-
 if __name__ == "__main__":
-    main()
+    df = load_data()
+    X, y = preprocess_data(df, "KNN")
+    model = train_and_evaluate(X, y)

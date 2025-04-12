@@ -1,0 +1,10 @@
+              precision    recall  f1-score   support
+
+           0       0.68      0.73      0.70      7551
+           1       0.68      0.63      0.66      7105
+
+    accuracy                           0.68     14656
+   macro avg       0.68      0.68      0.68     14656
+weighted avg       0.68      0.68      0.68     14656
+
+Melhores parâmetros: {'metric': 'euclidean', 'n_neighbors': np.int64(39), 'weights': 'uniform'}
