@@ -11,14 +11,16 @@ import pandas as pd
 def load_data(file_path='files/dataset_preprocessado.csv'):
     df = pd.read_csv(file_path)
 
-    cols_to_drop = ['release_date', 'original_title', 'vote_average',  # vote_average para não dar data leakage
-                    'prod_company_1', 'prod_company_2', 'prod_company_3',
-                    'prod_country_1', 'prod_country_2', 'prod_country_3', ]
+    cols_to_drop = ['vote_average']  # vote_average para não dar data leakage
     df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
 
     # Converter booleanos
     bool_cols = df.select_dtypes(include=['bool']).columns
     df[bool_cols] = df[bool_cols].astype(int)
+
+    print("Tamanho total do dataset:", len(df))
+    print("Distribuição de classes:")
+    print(df['bom_ruim'].value_counts(normalize=True))
 
     return df
 
@@ -45,7 +47,6 @@ def preprocess_data(df, model):
         return X, y, X_processed
     else:
         raise ValueError("Modelo não suportado. Use 'KNN', 'RF' ou 'XGB'")
-
 
 def save_metrics(y_test, y_pred, grid, output_path):
     os.makedirs(output_path, exist_ok=True)

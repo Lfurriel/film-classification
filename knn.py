@@ -17,7 +17,7 @@ def train_and_evaluate(X, y):
 
     # Otimização de hiperparâmetros
     param_grid = {
-        'n_neighbors': np.arange(19, 50, 2),
+        'n_neighbors': np.arange(3, 39, 2),
         'weights': ['uniform'], # ['uniform', 'distance']
         'metric': ['euclidean'] # ['euclidean', 'manhattan']
     }
@@ -48,6 +48,5 @@ def train_and_evaluate(X, y):
 
 if __name__ == "__main__":
     df = load_data()
-    print("Tamanho total do dataset:", len(df))
     X, y = preprocess_data(df, "KNN")
     model = train_and_evaluate(X, y)

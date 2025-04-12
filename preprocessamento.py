@@ -7,7 +7,7 @@ def main():
     df = pd.read_csv('files/dataset.csv')
     print("Tamanho total do dataset:", len(df))
 
-    # 1. Remover filmes com vote_count = 0
+    # 1. Remover filmes com vote_count <= 10
     df = df[df['vote_count'] > 10]
 
     # 2. Removendo filmes sem gênero
@@ -43,10 +43,8 @@ def main():
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
 
     # 8. Criar coluna target (Bom = 1, Ruim = 0)
-    df['bom_ruim'] = df['vote_average'].apply(lambda x: 1 if x >= 6.3 else 0)
-
-    # 9. remover linhas com campos vazios
-    # df = df.dropna()
+    limiar = df['vote_average'].median() # 6.232
+    df['bom_ruim'] = df['vote_average'].apply(lambda x: 1 if x >= limiar else 0)
 
     print("\nDistribuição de classes:")
     print(df['bom_ruim'].value_counts(normalize=True))

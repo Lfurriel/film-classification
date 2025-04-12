@@ -40,6 +40,5 @@ def train_and_evaluate(X, y):
 
 if __name__ == "__main__":
     df = load_data()
-    print("Tamanho total do dataset:", len(df))
     X, y = preprocess_data(df, "RF")
     model = train_and_evaluate(X, y)
