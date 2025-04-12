@@ -90,12 +90,6 @@ def preprocess_data(df):
     X_selected = selector.fit_transform(X[numeric_cols], y)
     selected_features = numeric_cols[selector.get_support()]
 
-    # Balanceamento
-    if len(y.unique()) > 1 and y.value_counts()[0] / y.value_counts()[1] > 1.5:
-        X_res, y_res = SMOTE(random_state=42).fit_resample(X_selected, y)
-        print(f"Balanceamento aplicado. Nova distribuição: {pd.Series(y_res).value_counts().to_dict()}")
-        return X_res, y_res, scaler, selector, selected_features
-
     return X_selected, y, scaler, selector, selected_features
 
 
