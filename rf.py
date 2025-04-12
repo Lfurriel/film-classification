@@ -34,7 +34,7 @@ def train_and_evaluate(X, y):
     y_pred = best_model.predict(X_test)
 
     # Salvar métricas e modelo
-    save_metrics(y_test, y_pred, grid, output_path=OUTPUT_PATH)
+    save_metrics(y_test, y_pred, grid, output_path=OUTPUT_PATH, name="rf")
     save_artifacts(best_model, path=WEIGHT_PATH)
     return best_model
 

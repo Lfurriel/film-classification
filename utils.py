@@ -48,16 +48,16 @@ def preprocess_data(df, model):
     else:
         raise ValueError("Modelo não suportado. Use 'KNN', 'RF' ou 'XGB'")
 
-def save_metrics(y_test, y_pred, grid, output_path):
+def save_metrics(y_test, y_pred, grid, output_path, name):
     os.makedirs(output_path, exist_ok=True)
     plt.figure(figsize=(6, 6))
     sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
     plt.title('Matriz de Confusão')
-    plt.savefig(f'{output_path}confusion_matrix.png')
+    plt.savefig(f'{output_path}confusion_matrix_{name}.png')
     plt.close()
-    with open(f'{output_path}classification_report.txt', 'w') as f:
+    with open(f'{output_path}classification_report_{name}.txt', 'w') as f:
         f.write(classification_report(y_test, y_pred))
-        f.write(f"\nMelhores parâmetros: {grid.best_params_}")
+        f.write(f"\nMelhores parametros: {grid.best_params_}")
 
 
 def save_artifacts(model, path):

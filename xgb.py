@@ -37,7 +37,7 @@ def train_and_evaluate(X, y, X_processed):
     best_model = grid.best_estimator_
     y_pred = best_model.predict(X_test)
 
-    save_metrics(y_test, y_pred, grid, output_path=OUTPUT_PATH)
+    save_metrics(y_test, y_pred, grid, output_path=OUTPUT_PATH, name="xgb")
     save_artifacts(best_model, path=WEIGHT_PATH)
     return best_model
 
