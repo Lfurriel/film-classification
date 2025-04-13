@@ -2,7 +2,6 @@ from utils import *
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 
-RANDOM_STATE = 42
 TEST_SIZE = 0.2
 OUTPUT_PATH = 'output/xgb/'
 WEIGHT_PATH = 'weights/xgb/'

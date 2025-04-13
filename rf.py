@@ -2,7 +2,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from utils import *
 
-RANDOM_STATE = 42
 TEST_SIZE = 0.2
 OUTPUT_PATH = 'output/rf/'
 WEIGHT_PATH = 'weights/rf/'
@@ -10,7 +9,7 @@ WEIGHT_PATH = 'weights/rf/'
 def train_and_evaluate(X, y):
     """Treina e avalia o modelo com GridSearch"""
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+        X, y, test_size=TEST_SIZE, random_state=42
     )
 
     # Grid de parâmetros otimizado
@@ -21,7 +20,7 @@ def train_and_evaluate(X, y):
     }
 
     grid = GridSearchCV(
-        RandomForestClassifier(random_state=RANDOM_STATE),
+        RandomForestClassifier(random_state=42),
         param_grid,
         cv=5,
         n_jobs=-1,

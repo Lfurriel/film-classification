@@ -4,7 +4,6 @@ from utils import *
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 
-RANDOM_STATE = 42
 TEST_SIZE = 0.2
 OUTPUT_PATH = 'output/knn/'
 WEIGHT_PATH = 'weights/knn/'
