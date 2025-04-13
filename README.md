@@ -145,7 +145,7 @@ Foram utilizadas as métricas precisão, recall, F1-score e acurácia para avali
 
 
 ###### Random Forest
-- Acurácia: 70%
+- **Acurácia:** 70%
 - **Precisão (Classe 0):** 0.69 **| Precisão (Classe 1):** 0.71
 - **Recall (Classe 0):** 0.75 **| Recall (Classe 1):** 0.64
 - **F1-score (Macro):** 0.69
