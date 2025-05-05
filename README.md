@@ -34,6 +34,6 @@ O arquivo então é carregado novamente durante a execução dos algoritmos. Pri
 
 |    Modelo     | Acurácia (%) |                                               Melhores hiperparâmetros                                               |
 |:-------------:|:------------:|:--------------------------------------------------------------------------------------------------------------------:|
-|      KNN      |      68      |                      {'metric': 'euclidean', 'n_neighbors': np.int64(39), 'weights': 'uniform'}                      |
+|      KNN      |      68      |                      {'metric': 'manhattan', 'n_neighbors': np.int64(31), 'weights': 'uniform'}                      |
 | Random Forest |      70      |                            {'max_depth': 10, 'max_features': 'sqrt', 'n_estimators': 100}                            |
 |    XGBoost    |      72      | {'colsample_bytree': 0.8, 'gamma': 0.1, 'learning_rate': 0.1, 'max_depth': 7, 'n_estimators': 150, 'subsample': 0.8} |
